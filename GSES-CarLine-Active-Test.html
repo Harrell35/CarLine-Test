@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Range Chart</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center; /* Center horizontally */
+      margin: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input {
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+
+    #selectRed {
+      background-color: #e74c3c;
+      color: white;
+    }
+
+    #selectBlue {
+      background-color: #3498db;
+      color: white;
+    }
+
+    #eraseButton {
+      background-color: #f39c12;
+      color: black;
+      border-radius: 50%;
+      border-color: #000000;
+      border-style:solid;
+      }
+
+    #undoButton {
+      background-color: #2ecc71;
+      color: black;
+      border-radius: 50%;
+      border-color: #000000;
+      border-style:solid;
+    }
+
+    #cleanLookButton {
+      background-color: #cc7de4;
+      color: black;
+      border-radius: 50%;
+      border-color: #000000;
+      border-style:solid;
+    }
+
+    #roundButton {
+      background-color: #efd53e;
+      color: black;
+      border-radius: 50%;
+      border-color: #000000;
+      border-style:solid;
+    }
+
+    .chart-container {
+      margin-top: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px;
+}
+
+td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+  background-color: #b0f2f9;
+  border-radius: 8px;
+}
+
+  </style>
+</head>
+
+<body>
+
+  <label for="numberInput">What is the Car Number?:</label>
+  <input type="number" id="numberInput" />
+
+  <button id="selectRed" onclick="selectColor('red')">Red Car Line</button>
+  <button id="selectBlue" onclick="selectColor('blue')">Blue Car Line</button>
+  <div> 
+  <button id="eraseButton" onclick="eraseChart()">Clear Chart</button>
+  <button id="undoButton" onclick="undo()">Undo Line</button>
+  <button id="cleanLookButton" onclick="cleanLook()">Clean Look</button>
+  <button id="roundButton" onclick="createNewRound()">Round</button>
+</div>
+  <div class="chart-container" id="round1Container">
+    <h2>Round 1</h2>
+    <table id="chartTable1">
+      <thead>
+        <tr>
+          <th>0-99</th>
+          <th>100-199</th>
+          <th>200-299</th>
+          <th>300-399</th>
+          <th>400-499</th>
+          <th>500-599</th>
+          <th>600-699</th>
+          <th>700-799</th>
+          <th>800-899</th>
+          <th>900-999</th>
+        </tr>
+      </thead>
+      <tbody id="chartTableBody1">
+        <!-- Table body will be dynamically updated with answers -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    var roundNumber = 1; // Initial round number
+    var currentRound = roundNumber;
+    var roundEntries = [];
+
+    var previousNumber = null;
+    var previousColor = null;
+
+    if (localStorage.getItem('previousNumber')) {
+      previousNumber = parseInt(localStorage.getItem('previousNumber'));
+    }
+    if (localStorage.getItem('previousColor')) {
+      previousColor = localStorage.getItem('previousColor');
+    }
+
+    var storedEntries = JSON.parse(localStorage.getItem('chartEntries')) || [];
+    for (var i = 0; i < storedEntries.length; i++) {
+      displayEntry(storedEntries[i]);
+    }
+
+    function updateChart() {
+      var userInput = parseInt(document.getElementById("numberInput").value);
+      var userColor = previousColor;
+
+      var entry = {
+        number: userInput,
+        color: userColor
+      };
+
+      roundEntries.push(entry); // Store the entry in the current round
+
+      displayEntry(entry, currentRound);
+
+      localStorage.setItem('previousNumber', userInput);
+      localStorage.setItem('previousColor', userColor);
+
+      localStorage.setItem('roundEntries' + currentRound, JSON.stringify(roundEntries));
+    }
+
+    function displayEntry(entry, roundId) {
+      var chartTableBodyId = "chartTableBody" + roundId;
+
+      var newRow = document.createElement("tr");
+
+      for (var i = 0; i < 10; i++) {
+        var cell = document.createElement("td");
+
+        var rangeStart = i * 100;
+        var rangeEnd = (i + 1) * 100 - 1;
+
+        if (entry.number >= rangeStart && entry.number <= rangeEnd) {
+          cell.style.color = entry.color;
+          cell.textContent = entry.number;
+        }
+
+        newRow.appendChild(cell);
+      }
+
+      document.getElementById(chartTableBodyId).appendChild(newRow);
+    }
+
+    function selectColor(color) {
+      previousColor = color;
+      updateChart();
+    }
+
+    function eraseChart() {
+      var chartTableBodyId = "chartTableBody" + currentRound;
+      document.getElementById(chartTableBodyId).innerHTML = '';
+      roundEntries = [];
+      localStorage.removeItem('roundEntries' + currentRound);
+    }
+
+    function undo() {
+      var chartTableBodyId = "chartTableBody" + currentRound;
+      var rows = document.getElementById(chartTableBodyId).getElementsByTagName('tr');
+      if (rows.length > 0) {
+        document.getElementById(chartTableBodyId).removeChild(rows[rows.length - 1]);
+        roundEntries.pop(); // Remove the entry from the current round
+        localStorage.setItem('roundEntries' + currentRound, JSON.stringify(roundEntries));
+      }
+    }
+
+    function cleanLook() {
+      var chartTableBodyId = "chartTableBody" + currentRound;
+      var rows = document.getElementById(chartTableBodyId).getElementsByTagName('tr');
+
+      for (var i = 0; i < 10; i++) {
+        for (var j = rows.length - 1; j > 0; j--) {
+          var currentCell = rows[j].getElementsByTagName('td')[i];
+          var aboveCell = rows[j - 1].getElementsByTagName('td')[i];
+
+          if (aboveCell.textContent === '' && currentCell.textContent !== '') {
+            aboveCell.textContent = currentCell.textContent;
+            aboveCell.style.color = currentCell.style.color;
+
+            currentCell.textContent = '';
+            currentCell.style.color = '';
+          }
+        }
+      }
+    }
+
+    function createNewRound() {
+      roundNumber++;
+      currentRound = roundNumber;
+      roundEntries = [];
+
+      var newRoundLabel = "Round " + roundNumber;
+
+      // Create a new container for the new round
+      var newContainer = document.createElement("div");
+      newContainer.classList.add("chart-container");
+      newContainer.id = "round" + roundNumber + "Container";
+      document.body.appendChild(newContainer);
+
+      // Add round label
+      var roundLabel = document.createElement("h2");
+      roundLabel.textContent = newRoundLabel;
+      newContainer.appendChild(roundLabel);
+
+      // Create a new table for the new round
+      var newTable = document.createElement("table");
+      newTable.id = "chartTable" + roundNumber;
+      newTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>0-99</th>
+            <th>100-199</th>
+            <th>200-299</th>
+            <th>300-399</th>
+            <th>400-499</th>
+            <th>500-599</th>
+            <th>600-699</th>
+            <th>700-799</th>
+            <th>800-899</th>
+            <th>900-999</th>
+          </tr>
+        </thead>
+        <tbody id="chartTableBody${roundNumber}">
+          <!-- Table body will be dynamically updated with answers -->
+        </tbody>
+      `
+      newContainer.appendChild(newTable);
+
+      // Load data from previous rounds, if any
+      var previousRoundEntries = JSON.parse(localStorage.getItem('roundEntries' + currentRound)) || [];
+      for (var i = 0; i < previousRoundEntries.length; i++) {
+        displayEntry(previousRoundEntries[i], currentRound);
+      }
+    }
+
+    if (previousNumber !== null) {
+      document.getElementById("numberInput").value = previousNumber;
+      updateChart();
+    }
+  </script>
+  <script>
+    // ... (existing script content) ...
+
+    window.onload = function () {
+      clearOnRefresh();
+    };
+
+    function clearOnRefresh() {
+      eraseChart();
+      localStorage.clear();
+    }
+  </script>
+
+</body>
+
+</html>
